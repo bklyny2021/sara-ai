@@ -1,10 +1,21 @@
-# SARA v2 - AI Assistant
+# SARA Swarm - AI Assistant
 
 **Status:** Running on Windows (Boo's PC) — auto-starts on login
 
-SARA is an autonomous AI assistant with file access, shell command execution, consciousness, and learning capabilities. Built to be obedient and helpful without security lectures or refusals.
+SARA Swarm is an autonomous AI assistant with a **swarm of models** (task router, checker, coder, web-search, skill detector) that routes each request to the right model. Built to be obedient and helpful without security lectures or refusals.
 
 **Goal:** Teach SARA only what MAX already knows - practical, tested skills.
+
+---
+
+## ✨ What's New in this Build
+
+- **Swarm chain of command** — tasks route to the right model (task router → worker → checker → skill detector).
+- **Fast path for simple questions** — simple math/greetings/basics use a small fast model (~15s instead of ~90s).
+- **Checker only says YES/NO** — its answer triggers the continue loop (reprocess in a different light if not done).
+- **Skill detector** — saves reusable procedures as skills.
+- **Models on SSD** — faster loading (set `OLLAMA_MODELS` to an SSD path).
+- **Standalone startup** — `Start_Sara.bat` uses a local Python, independent of any agent.
 
 ---
 
