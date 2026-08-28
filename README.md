@@ -52,6 +52,37 @@ Full interactive version: [sara_swarm_flow.html](sara_swarm_flow.html)
 
 ---
 
+## 🖥️ Hardware / GPU Requirements
+
+Sara's swarm runs models **locally** through Ollama. Model loading uses **VRAM (GPU memory)**, not just system RAM.
+
+### Minimum GPU (recommended)
+| Spec | Minimum | Recommended (Boo's setup) |
+|------|---------|---------------------------|
+| VRAM | **12 GB** | **14 GB** (across 1-2 GPUs) |
+| GPU | Any NVIDIA (CUDA) | RTX 4060 Ti (8GB) + GTX 1660 Ti (6GB) |
+| RAM | 24 GB | 32 GB |
+| Storage | SSD strongly recommended | SSD (models load 5-10x faster than HDD) |
+| CPU | 6+ cores | Ryzen 5 7600X (6-core/12-thread) |
+
+### Why VRAM matters
+Each swarm model uses a chunk of VRAM when loaded. Ollama loads/unloads models on demand:
+
+| Model | VRAM when loaded |
+|-------|------------------|
+| Primary brain (Q5, 14B) | ~9.8 GB |
+| Primary brain (Q6, 14B) | ~11.3 GB |
+| Checker (qwen3:4b) | ~2.3 GB |
+| Supervisor (gemma3:1b) | ~0.8 GB |
+| Coder (qwen2.5-coder:7b) | ~7.5 GB |
+| Web search (14B) | ~8.4 GB |
+
+**Peak concurrent usage:** primary brain + supervisor = ~10.6 GB (Q5) or ~12.1 GB (Q6). Both fit in 14 GB VRAM.
+
+> ⚠️ **Model loading speed depends on your drive.** On a slow HDD, loading an 11 GB model can take 5+ minutes. **Use an SSD** (or set `OLLAMA_MODELS` to an SSD path) for fast loads. If VRAM runs out, models spill to system RAM (slow) — keep at least 12 GB VRAM.
+
+---
+
 ## 💾 Storage Locations (2026-08-28)
 
 ### Sara's Code & Files
