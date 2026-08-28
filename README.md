@@ -8,6 +8,16 @@ SARA is an autonomous AI assistant with file access, shell command execution, co
 
 ---
 
+## 📊 How Sara Works (Chain of Command Flow Chart)
+
+SARA runs a **swarm of models** through a chain of command. Click below to see the full flow chart:
+
+➡️ **[View the Swarm Chain-of-Command Flow Chart](sara_swarm_flow.html)**
+
+The flow: **User Request → Task Creator/Router → Worker → Checker (YES/NO) → Continue Loop → Skill Detector → Self-improve.** The checker's YES/NO answer is the trigger that starts/stops the continue loop.
+
+---
+
 ## 💾 Storage Locations (2026-08-28)
 
 ### Sara's Code & Files
