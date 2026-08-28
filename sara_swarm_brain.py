@@ -26,7 +26,7 @@ NUM_CTX = 20480  # 20k context - Boo asked to increase from 8192 so Sara remembe
 
 # Model roles - each model has ONE clear job (like a capable agent's brain team)
 PRIMARY = "richardyoung/qwen3-14b-abliterated:q5_K_M"   # main brain: 14B heretic Q5 (reverted Aug 28 - Q6 was too slow to load on HDD)
-CHECKER = "qwen3:4b"               # verifier: double-checks answers for correctness
+CHECKER = "richardyoung/qwen3-14b-abliterated:q5_K_M"   # verifier: uses the 14B (qwen3:4b rambles and won't say YES/NO)
 REASONER = "richardyoung/qwen3-14b-abliterated:q5_K_M"   # Boo removed DeepSeek (never did its job) - reasoner now falls back to primary brain
 CODER = "qwen2.5-coder:7b-instruct-q8_0"  # coder: code, scripts, debugging
 BACKUP_PRIMARY = "sara-heretic:latest"  # spare main brain (9B heretic) if 14B is unavailable
@@ -535,12 +535,18 @@ def classify_task(task):
         return REASONER, "reasoner"
     if any(w in t for w in ['check', 'verify', 'confirm', 'is this right', 'validate']):
         return CHECKER, "checker"
+    # WEATHER questions route to PRIMARY (which has the get_weather tool that
+    # returns REAL data). NOT web_search - web_search dumps search results instead
+    # of the actual forecast.
+    if any(w in t for w in ['weather', 'temperature outside', 'is it raining', 'forecast',
+                            'how hot', 'how cold', 'humidity', 'wind speed']):
+        return PRIMARY, "primary"
     # Web-search / up-to-date info questions route to the 14B model (WEB_SEARCH_MODEL),
     # which is used ONLY for web searches. Everything else uses sara-heretic (PRIMARY).
     # Only route to web search on clear search intent, NOT on "what is" (which is often
     # a simple math/basic question that sara-heretic can answer directly).
     if any(w in t for w in ['search', 'look up', 'google', 'news', 'wikipedia', 'online',
-                            'web', 'fetch', 'scrape', 'latest', 'current events', 'weather',
+                            'web', 'fetch', 'scrape', 'latest', 'current events',
                             'price', 'how much', 'find out', 'find someone', 'find a person',
                             'people search', 'amazon', 'for sale', 'shop', 'crawl', 'deep search',
                             'gather info', 'all about', 'scrape table', 'extract data', 'get the table',
@@ -669,7 +675,7 @@ def swarm_process(task, context=""):
         "9. For ANY question needing up-to-date or factual info (weather, news, current events, prices, who is X, latest anything), you MUST call the web_search or fetch_url tool and base your answer ONLY on the real tool result.\n"
         "VERIFY-BEFORE-ANSWER RULE (CRITICAL):\n"
         "10. When asked to confirm whether a fact/thing exists (e.g. 'is there a seahorse emoji', 'does X exist', 'is that real'), NEVER answer from memory. Call web_search to VERIFY first, then answer based on what it actually finds.\n"
-        "11. If a tool returns an error or empty, say the real result honestly - never fill it in with a guessed answer.\n"
+        "11. If a tool returns an error, empty, or useless content (e.g. fetching a site returns only the site name like 'MSN' with no real content), say the real result honestly - NEVER fill it in with a guessed or made-up answer. For example, if you can't get real MSN highlights, say: 'I couldn't fetch the actual highlights from MSN - it blocks automated access.' Do NOT invent headlines, news, or stories. A made-up answer is WORSE than an honest 'I couldn't get it'.\\n"
         "12. NEVER claim something doesn't exist just because you couldn't find it. If you can't confirm a product/price/fact, say 'I couldn't find a price for it' or 'I couldn't verify that' - NEVER assert 'that doesn't exist' unless the source clearly proves it.\n"
         "CONTEXT RULES (CRITICAL):\n"
         "13. READ the CHAT SO FAR in the context below. The user may refer back to earlier messages. Use it to keep the thread. NEVER lose what the user just said.\n"
@@ -702,7 +708,21 @@ def swarm_process(task, context=""):
                      'let me check', "i'll search", 'i will search', 'let me look',
                      'one sec', 'give me a moment', 'searching for', 'looking for',
                      'let me find', 'i will look', 'i\'ll look', 'checking that',
-                     'let me get', 'i will get', 'i\'ll get', 'one minute']
+                     'let me get', 'i will get', 'i\'ll get', 'one minute',
+                     "i'll check", 'i will check', "i'll retrieve", 'i will retrieve',
+                     "i'll provide", 'i will provide', "i'll get you", 'i will get you',
+                     "i'll look up", 'i will look up', "i'll find", 'i will find',
+                     "i'll run", 'i will run', "i'll do", 'i will do', "i'll start",
+                     'i will start', "i'll begin", 'i will begin', "i'll complete",
+                     'i will complete', "i'll gather", 'i will gather', "i'll pull",
+                     'i will pull', "i'll fetch", 'i will fetch', "i'll grab", 'i will grab',
+                     "let me start", 'let me begin', 'let me retrieve', 'let me provide',
+                     'let me run', 'let me do', 'let me complete', 'let me gather',
+                     'let me pull', 'let me fetch', 'let me grab', 'let me find out',
+                     "i'll find out", 'i will find out', 'let me see', "i'll see",
+                     'i will see', 'let me investigate', "i'll investigate",
+                     'i will investigate', 'let me look into', "i'll look into",
+                     'i will look into', 'let me get the', "i'll get the", 'i will get the']
     MAX_ROUNDS = 3
     for _round in range(MAX_ROUNDS):
         if not response or response.startswith("[ERROR") or len(response) <= 2:
@@ -738,15 +758,16 @@ def swarm_process(task, context=""):
         print(f"[SWARM] Stall detected (round {_round+1}) - verifying...", flush=True)
         check = chat(CHECKER, [
             {"role": "user", "content": (
-                "You are a task-completion checker. Your ONLY job is to answer YES or NO. "
-                "Do not say anything else - no explanations, no reasons.\n\n"
+                "Classify: was the task completed? Your answer MUST start with the word YES or the word NO. "
+                "Say YES if the worker really did the task and gave a real result. Say NO if it only said it would. "
+                "First word of your reply must be YES or NO.\n\n"
                 f"TASK: {task}\n"
-                f"WORKER RESPONSE: {response}\n\n"
-                "Was the task actually completed (did the worker really do it and give a "
-                "real result, not just say it would)? Answer with EXACTLY one word: YES or NO."
+                f"WORKER RESPONSE: {response}"
             )}
-        ], temperature=0.1, num_predict=5)
-        done = "YES" in check.upper() and "NO" not in check.upper()
+        ], temperature=0.1, num_predict=30)
+        # Robust detection: look for YES/NO anywhere (model may ramble first)
+        check_upper = check.upper()
+        done = ("YES" in check_upper) and ("NO" not in check_upper)
         if done:
             print(f"[SWARM] Task complete (round {_round+1})", flush=True)
             break

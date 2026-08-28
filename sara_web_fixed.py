@@ -905,9 +905,9 @@ def speak():
     try:
         # Launch the voice worker in its own windowless process (pythonw).
         # If Piper/espeak aborts, only the child dies - Sara keeps running.
-        worker = "C:/Users/bklyn/SARA3-2026/sara_voice_worker.py"
+        worker = "F:/SARA3-2026/sara_voice_worker.py"
         # Use Sara's own standalone venv pythonw (independent of any agent)
-        pythonw = r"C:\Users\bklyn\SARA3-2026\.venv-sara\Scripts\pythonw.exe"
+        pythonw = r"F:\SARA3-2026\.venv-sara\Scripts\pythonw.exe"
         if not os.path.exists(pythonw):
             # fall back to whichever python is running Sara
             pythonw = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")

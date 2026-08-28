@@ -3,7 +3,7 @@
 voice-engine crash can NEVER take down the main Sara web app."""
 import os, sys, subprocess, tempfile, shutil, re
 
-PIPER_VOICE = r"C:\Users\bklyn\AppData\Local\hermes\cache\piper-voices\en_GB-alba-medium.onnx"
+PIPER_VOICE = r"F:\SARA3-2026\voices\en_GB-alba-medium.onnx"
 FFPLAY = shutil.which("ffplay") or r"C:\ProgramData\chocolatey\bin\ffplay.exe"
 
 def clean(text):
