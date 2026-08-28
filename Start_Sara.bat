@@ -3,12 +3,16 @@ REM ============================================
 REM  START SARA - double-click this to run her
 REM  Kills duplicates, starts every part of Sara
 REM  Runs windowless (pythonw), no console flash
+REM  Uses a LOCAL standalone Python (not tied to any agent)
 REM ============================================
 cd /d "%~dp0"
 
-REM Use the same pythonw that runs her
-set PYTHONW=C:\Users\bklyn\AppData\Local\hermes\hermes-agent\venv\Scripts\pythonw.exe
-if not exist "%PYTHONW%" set PYTHONW=pythonw
+REM 1) Prefer Sara's own venv in this folder (created with: uv venv .venv-sara)
+set PYTHONW=%~dp0.venv-sara\Scripts\pythonw.exe
+if not exist "%PYTHONW%" (
+    REM 2) Fall back to a pythonw on the system PATH
+    set PYTHONW=pythonw
+)
 
 REM Launch the one-start script windowless
 start "" "%PYTHONW%" "%~dp0start_sara.py"

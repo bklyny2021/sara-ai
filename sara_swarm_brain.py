@@ -31,6 +31,7 @@ REASONER = "richardyoung/qwen3-14b-abliterated:q5_K_M"   # Boo removed DeepSeek 
 CODER = "qwen2.5-coder:7b-instruct-q8_0"  # coder: code, scripts, debugging
 BACKUP_PRIMARY = "sara-heretic:latest"  # spare main brain (9B heretic) if 14B is unavailable
 WEB_SEARCH_MODEL = "huihui_ai/qwen2.5-abliterate:14b"  # 14B used ONLY for web searches
+FAST_MODEL = "qwen3:4b"  # fast small model for simple questions (math, basics, short)
 
 def _vary_temp():
     """Fixed LOW temperature so Sara is accurate and factual, not creative/random.
@@ -481,7 +482,53 @@ def chat_with_tools(model, task, system):
 
 def classify_task(task):
     """Decide which model should handle the task"""
-    t = task.lower()
+    t = task.lower().strip().rstrip('?!')
+    # FAST PATH: simple questions go to the small fast model (qwen3:4b) so Sara
+    # answers in ~5s instead of ~90s. Detects short math/basic/greeting questions.
+    # These need NO tools, NO web, NO complex reasoning - just a quick answer.
+    _is_simple_math = (
+        len(t) < 40 and
+        any(w in t for w in ['plus', 'minus', 'times', 'divided by', 'multiply', 'multiplied',
+                             ' + ', ' - ', ' x ', ' / ', 'add ', 'subtract', 'what is 1+',
+                             'what is 2+', 'what is 3+', 'what is 4+', 'what is 5+',
+                             'what is 6+', 'what is 7+', 'what is 8+', 'what is 9+',
+                             'what is 10+', 'whats 1+', 'whats 2+', 'whats 3+', 'whats 4+',
+                             'whats 5+', 'whats 6+', 'whats 7+', 'whats 8+', 'whats 9+',
+                             'whats 10+', 'how much is', 'what does 1+', 'what does 2+'])
+        and not any(w in t for w in ['search', 'look up', 'google', 'web', 'online',
+                                     'price of', 'stock', 'buy', 'shop', ' and ', ' i didnt ',
+                                     'i did not', 'i said', 'you said', 'no ', 'wrong', 'not '])
+    )
+    # AMBIGUOUS/TRICK questions (e.g. "1 and 1") go to the 14B model, NOT the small
+    # model. The small model guesses; the 14B is smart enough to ask for clarification.
+    _is_ambiguous = (
+        (' and ' in t and any(c.isdigit() for c in t))
+        or 'trick' in t
+        or ('whats' in t and ' and ' in t)
+    )
+    _is_simple_greeting = t in ['hi', 'hello', 'hey', 'yo', 'good morning', 'good afternoon',
+                                'good evening', 'how are you', 'whats up', 'what is your name',
+                                'who are you', 'thanks', 'thank you', 'ok', 'okay', 'bye']
+    # Basic factual questions the small model can answer alone - but ONLY if they
+    # contain NO action/tool words. The small model must NOT try to do actions,
+    # open browsers, create files, etc. It only answers simple facts/math.
+    _action_words = ['search', 'look up', 'google', 'web', 'online', 'open', 'create', 'make',
+                     'run', 'list', 'read', 'write', 'delete', 'scan', 'camera', 'file', 'folder',
+                     'install', 'price', 'weather', 'news', 'send', 'scrape', 'fetch', 'browse',
+                     'start', 'stop', 'check', 'show', 'close', 'shut', 'restart', 'download',
+                     'find', 'get', 'turn', 'play', 'set', 'add', 'connect', 'update', 'help me']
+    _is_simple_fact = (
+        len(t) < 30
+        and any(w in t for w in ['what is the capital', 'who wrote', 'how many', 'what color',
+                                 'when was', 'where is', 'how old', 'what is a', 'define',
+                                 'how tall', 'how big', 'what does', 'spell', 'meaning of'])
+        and not any(w in t for w in _action_words)
+    )
+    if _is_simple_math or _is_simple_greeting or _is_simple_fact:
+        # Ambiguous/trick questions NEVER go to the small model - route to 14B
+        if _is_ambiguous:
+            return PRIMARY, "primary"
+        return FAST_MODEL, "fast"
     if any(w in t for w in ['code', 'python', 'function', 'debug', 'script', 'program', 'write code', 'fix code']):
         return CODER, "coder"
     if any(w in t for w in ['why', 'explain', 'reason', 'analyze', 'plan', 'think', 'compare', 'evaluate', 'decide']):
@@ -512,6 +559,32 @@ def swarm_process(task, context=""):
     """
     model, role = classify_task(task)
     print(f"[SWARM] Routing to {role} ({model})", flush=True)
+
+    # FAST PATH: simple questions - use the small model directly, no router,
+    # no completion loop, no checker. Just a quick answer. This makes simple
+    # questions (math, greetings, basics) answer in ~5s instead of ~90s.
+    if role == "fast":
+        try:
+            _fast = chat(FAST_MODEL, [
+                {"role": "system", "content": "You are Sara, Boo's assistant. Answer directly and concisely. Do NOT show any thinking. If a question is AMBIGUOUS or a TRICK (e.g. '1 and 1' could mean 11, or 1+1, or something else), ASK for clarification instead of guessing. Only give a direct answer when the question is clear. Keep it to 1 sentence."},
+                {"role": "user", "content": task}
+            ], num_predict=200)
+            # Strip any thinking blocks (qwen3 wraps reasoning in  thinking tags)
+            import re as _re
+            _fast = _re.sub(r'<thinking>.*?</thinking>', '', _fast, flags=_re.DOTALL).strip()
+            _fast = _re.sub(r'^.*? response\s*', '', _fast, flags=_re.DOTALL).strip()
+            # Remove leading ramble ("the user is asking...", "okay, as Sara...", etc.)
+            _fast = _re.sub(r'^(the user|okay|alright|sure|hmm|let me think|well|um|as sara|so)[,.]?\s*', '', _fast, flags=_re.IGNORECASE).strip()
+            # Take the LAST sentence (the actual answer, after the thinking)
+            _sentences = _re.split(r'(?<=[.!?])\s+', _fast)
+            _last = _sentences[-1].strip() if _sentences else _fast
+            if _last and len(_last) > 2:
+                _fast = _last
+            if _fast and not _fast.startswith("[ERROR"):
+                return _fast.strip()
+        except Exception as e:
+            print(f"[SWARM] Fast path error, falling back: {e}", flush=True)
+        # fall through to normal path if fast failed
 
     # CHAIN OF COMMAND - Task Creator step.
     # The task creator is a small fast model that looks at the raw request and

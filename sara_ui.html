@@ -377,18 +377,42 @@ function finalizeSaraBubble(bubble, text, start) {
     setStatus(false);
     avatarEl.classList.add('talking');
     setMood('talking'); // red + pulse while speaking
-    // speak it (if voice on)
+    // speak it (if voice on) - QUEUED so only ONE section speaks at a time
+    // (no overlapping voices when Sara replies in multiple sections)
     if (voiceEnabled && text) {
         const clean = text.replace(/[🛠️💻📄📁🧮🌐📡🔄🗣️🔊🔍ℹ️🧠💭🤖❌✅🔴🟢📶⏱️📊📈📉💾🧹]/g, '')
             .replace(/```/g, '').replace(/\*\*/g, '').replace(/`/g, '');
-        fetch('/speak', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text: clean}) })
-            .then(() => { const dur = Math.min(8000, Math.max(1500, clean.length * 60)); setTimeout(() => { avatarEl.classList.remove('talking'); setMood('idle'); }, dur); })
-            .catch(() => setTimeout(() => { avatarEl.classList.remove('talking'); setMood('idle'); }, 2000));
+        if (clean.trim()) enqueueSpeech(clean);
+        const dur = Math.min(8000, Math.max(1500, clean.length * 60));
+        setTimeout(() => { if (speechQueue.length === 0) { avatarEl.classList.remove('talking'); setMood('idle'); } }, dur + 500);
     } else {
         setTimeout(() => { avatarEl.classList.remove('talking'); setMood('idle'); }, 2000);
     }
     isProcessing = false;
     processQueue();
+}
+
+// ---- SPEECH QUEUE: speak sections ONE at a time (no overlapping voices) ----
+let speechQueue = [];
+let speakingNow = false;
+function enqueueSpeech(text) {
+    speechQueue.push(text);
+    pumpSpeech();
+}
+function pumpSpeech() {
+    if (speakingNow || speechQueue.length === 0) return;
+    speakingNow = true;
+    const txt = speechQueue.shift();
+    avatarEl.classList.add('talking');
+    setMood('talking');
+    fetch('/speak', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text: txt}) })
+        .then(() => { const d = Math.min(8000, Math.max(1500, txt.length * 60)); return new Promise(r => setTimeout(r, d)); })
+        .catch(() => new Promise(r => setTimeout(r, 2000)))
+        .finally(() => {
+            speakingNow = false;
+            if (speechQueue.length === 0) { avatarEl.classList.remove('talking'); setMood('idle'); }
+            pumpSpeech();
+        });
 }
 
 function openTopic(id) {

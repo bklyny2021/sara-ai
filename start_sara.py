@@ -35,8 +35,8 @@ PORT = "8892"
 
 def _pythonw():
     """Find a pythonw.exe that works (windowless Python)."""
-    # Prefer the Hermes venv pythonw if present (known good on this PC)
-    cand = r"C:\Users\bklyn\AppData\Local\hermes\hermes-agent\venv\Scripts\pythonw.exe"
+    # Prefer Sara's own standalone venv pythonw (independent of any agent)
+    cand = r"C:\Users\bklyn\SARA3-2026\.venv-sara\Scripts\pythonw.exe"
     if os.path.exists(cand):
         return cand
     # Fall back to whatever pythonw is on PATH / alongside this python
