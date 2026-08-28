@@ -8,13 +8,47 @@ SARA is an autonomous AI assistant with file access, shell command execution, co
 
 ---
 
-## 📊 How Sara Works (Chain of Command Flow Chart)
+## 📊 HOW SARA WORKS — Swarm Chain of Command (FIRST)
 
-SARA runs a **swarm of models** through a chain of command. Click below to see the full flow chart:
+```
+        ┌─────────────┐
+        │ USER REQUEST │
+        └──────┬──────┘
+               ▼
+   ┌───────────────────────┐
+   │ 1. TASK CREATOR/ROUTER │  decides which worker handles it
+   └───────────┬───────────┘
+               ▼
+        ┌──────────────┐
+        │ 2. WORKER     │  coder / web_search / primary
+        └──────┬───────┘
+               ▼
+   ┌──────────────────────┐
+   │ 3. CHECKER (YES/NO)  │  "was the task completed?"
+   └───────────┬──────────┘
+               │
+     ┌─────────┴─────────┐
+     ▼                   ▼
+  YES (done)         NO (continue)
+     │                   │
+     │            ┌──────▼───────┐
+     │            │ 4. REPROCESS  │  different model + approach (3 rounds)
+     │            │  DIFFERENTLY  │
+     │            └──────┬───────┘
+     │                   │ (loop back to 2)
+     ▼                   ▼
+  RETURN ANSWER    ┌──────────────────┐
+                   │ 5. SKILL DETECTOR │  save reusable procedure
+                   └────────┬─────────┘
+                            ▼
+                   ┌──────────────────┐
+                   │ 6. SELF-IMPROVE   │  create new tool if stuck
+                   └──────────────────┘
+```
 
-➡️ **[View the Swarm Chain-of-Command Flow Chart](sara_swarm_flow.html)**
+**Why the checker only says YES/NO:** its answer is the trigger that starts/stops the continue loop. **YES** = done (loop stops). **NO** = reprocess in a different light (loop starts).
 
-The flow: **User Request → Task Creator/Router → Worker → Checker (YES/NO) → Continue Loop → Skill Detector → Self-improve.** The checker's YES/NO answer is the trigger that starts/stops the continue loop.
+Full interactive version: [sara_swarm_flow.html](sara_swarm_flow.html)
 
 ---
 
@@ -68,16 +102,45 @@ Sara's brain routes tasks through a chain of command so no model gets the wrong 
 
 ## 🚀 Quick Start (Windows)
 
+> ⚠️ **IMPORTANT:** Sara's code has **hardcoded paths** from Boo's machine (`C:\Users\bklyn\SARA3-2026\...`). Before running on YOUR machine, you must update these to your own paths.
+
+### Installation
+
 ```bash
-# Start SARA (web UI on port 8892)
-cd C:\Users\bklyn\SARA3-2026
+# 1. Clone the repo
+git clone https://github.com/bklyny2021/sara-ai.git
+cd sara-ai
+
+# 2. Fix the hardcoded paths (replace bklyn with YOUR username)
+#    The main files that reference C:\Users\bklyn\SARA3-2026 are:
+#    - sara_web_fixed.py
+#    - sara_swarm_brain.py
+#    - sara_brain.py
+#    - sara_supervisor.py
+#    - sara_browser.py
+#    - and the tools/ folder
+#    Use find-and-replace: "C:/Users/bklyn/SARA3-2026" -> "C:/Users/YOURNAME/SARA3-2026"
+
+# 3. Install dependencies
+pip install flask requests wikipedia
+
+# 4. Install Ollama and pull the models Sara needs:
+#    - Primary brain: ollama pull richardyoung/qwen3-14b-abliterated:q5_K_M
+#    - Checker:       ollama pull qwen3:4b
+#    - Supervisor:    ollama pull gemma3:1b
+#    - Coder:         ollama pull qwen2.5-coder:7b-instruct-q8_0
+#    - Web search:    ollama pull huihui_ai/qwen2.5-abliterate:14b
+
+# 5. Start Sara
 python sara_web_fixed.py
 
-# Or launch the standalone EXE (recommended - self-contained)
-C:\Users\bklyn\SARA3-2026\dist\SARA_0.2.0_standalone.exe
-
-# Then open:
+# 6. Open her web UI
 http://127.0.0.1:8892
+```
+
+**Or launch the standalone EXE (recommended - self-contained):**
+```bash
+C:\Users\bklyn\SARA3-2026\dist\SARA_0.2.0_standalone.exe
 ```
 
 **Auto-start:** `SARA_AutoStart.vbs` in the Startup folder launches Sara at every login (starts the EXE + opens her Chrome window, no duplicates).
