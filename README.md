@@ -178,31 +178,6 @@ C:\Users\bklyn\SARA3-2026\dist\SARA_0.2.0_standalone.exe
 
 ---
 
-## 🔧 Recent Fixes (2026-08-27)
-
-### 1. Sara now ACTUALLY runs commands (no more fake answers)
-- **Problem:** Sara was hallucinating — she'd *claim* to run `nvidia-smi` and make up numbers instead of really running it.
-- **Fix:** Added `nvidia-smi`, `tasklist`, `netstat`, `ipconfig`, `systeminfo` to the safe-command whitelist in `sara_web_fixed.py`, and added GPU detection to `detect_command_intent` so "how much gpu ram" maps to a real `nvidia-smi` run.
-- **Result:** Ask "how much gpu ram is being used" → Sara runs `nvidia-smi` and reports the REAL output.
-
-### 2. Temperature set to 0.1 (accuracy over creativity)
-- **Problem:** Sara's brain randomized temperature 0.5-0.9 every call, making her creative and prone to making things up.
-- **Fix:** Set ALL temperatures to **0.1** in `sara_web_fixed.py`, `sara_swarm_brain.py`, `sara_brain.py`, `sara_learning_chain.py`. `_vary_temp()` now returns a fixed 0.1.
-- **Result:** Sara is accurate and factual, not random.
-
-### 3. Self-teaching rule added
-- **Fix:** Added to `SARA-Modelfile`, `Modelfile_heretic.txt`, and the runtime system prompt in `sara_web_fixed.py`:
-  > If you don't know something, TEACH YOURSELF first — look it up, search, read, learn, try again. Only if you genuinely can't figure it out, tell Boo: "I don't know this — please teach me."
-
-### 4. Boot crash fixed
-- **Problem:** A "parts manager" feature made the source crash on boot (never reached Flask).
-- **Fix:** Reverted to the clean working startup (`_startup_schedule_check`). Source boots cleanly.
-
-### 5. Auto-start on login
-- **Fix:** `SARA_AutoStart.vbs` in the Startup folder launches Sara at login — checks if she's already running (no dupes), starts the EXE, opens her Chrome window.
-
----
-
 ## 📚 SARA Training Stages (What MAX Knows)
 
 ### **Stage 1: Python Programming** 🐍 (IN PROGRESS)
