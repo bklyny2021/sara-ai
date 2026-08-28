@@ -1,0 +1,22 @@
+{
+  "reminders": [
+    {
+      "id": 1787764690140,
+      "text": "Boo's birthday is in one week (October 8). Time to plan something!",
+      "due": 1790859600.0,
+      "due_disp": "Oct 01 2026",
+      "created": "2026-08-26T13:18:10.140327",
+      "fired": false
+    },
+    {
+      "id": 1787764690146,
+      "text": "Happy Birthday Boo! It's October 8. Wishing you a great one from Sara.",
+      "due": 1791464400.0,
+      "due_disp": "Oct 08 2026",
+      "created": "2026-08-26T13:18:10.146567",
+      "fired": false
+    }
+  ],
+  "appointments": [],
+  "timers": []
+}

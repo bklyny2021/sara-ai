@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SARA 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background: #0a0f1e;
+            color: #c8d6e5;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ===== LEFT SIDEBAR ===== */
+        .sidebar {
+            width: 300px;
+            min-width: 260px;
+            max-width: 320px;
+            background: #0d1426;
+            border-right: 1px solid rgba(0, 229, 255, 0.12);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .sidebar-header {
+            padding: 18px 16px;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.12);
+        }
+        .brand {
+            font-size: 18px;
+            letter-spacing: 3px;
+            color: #00e5ff;
+            text-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+            font-weight: 300;
+        }
+        .brand small { color: #7a8ba3; letter-spacing: 2px; font-size: 11px; display: block; margin-top: 2px; }
+        .new-chat {
+            margin: 14px 12px 6px;
+            padding: 10px;
+            background: rgba(0, 229, 255, 0.12);
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            border-radius: 8px;
+            color: #00e5ff;
+            font-size: 13px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .new-chat:hover { background: rgba(0,229,255,0.25); box-shadow: 0 0 12px rgba(0,229,255,0.3); }
+
+        .conv-list-label {
+            padding: 12px 14px 6px;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: #5f7390;
+            text-transform: uppercase;
+        }
+        .conv-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 8px 12px;
+        }
+        .conv-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 4px;
+            border: 1px solid transparent;
+            transition: background 0.15s;
+            overflow: hidden;
+        }
+        .conv-item:hover { background: rgba(0, 229, 255, 0.08); }
+        .conv-item.active { background: rgba(0, 229, 255, 0.15); border-color: rgba(0, 229, 255, 0.3); }
+        .conv-item .conv-preview {
+            font-size: 13px;
+            color: #c8d6e5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .conv-item .conv-time {
+            font-size: 10px;
+            color: #5f7390;
+            margin-top: 3px;
+            letter-spacing: 0.5px;
+        }
+        .conv-none { color: #5f7390; font-size: 12px; padding: 12px; text-align: center; }
+
+        /* ===== MAIN AREA ===== */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 20px;
+            background: rgba(10, 15, 30, 0.9);
+            border-bottom: 1px solid rgba(0, 229, 255, 0.12);
+            z-index: 5;
+        }
+        .avatar {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #00e5ff 0%, #0077aa 70%, transparent 100%);
+            box-shadow: 0 0 14px rgba(0, 229, 255, 0.6);
+            flex-shrink: 0;
+            transition: background 0.4s ease, box-shadow 0.4s ease;
+        }
+        /* mood ring colors: talking=red, thinking=blue, listening=yellow, idle=grey */
+        .avatar.mood-talking { background: radial-gradient(circle, #ff4d4d 0%, #991111 70%, transparent 100%); box-shadow: 0 0 18px rgba(255,60,60,0.9); }
+        .avatar.mood-thinking { background: radial-gradient(circle, #4da3ff 0%, #0b2a6e 70%, transparent 100%); box-shadow: 0 0 18px rgba(70,140,255,0.9); }
+        .avatar.mood-listening { background: radial-gradient(circle, #ffd24d 0%, #aa8800 70%, transparent 100%); box-shadow: 0 0 18px rgba(255,210,70,0.9); }
+        .avatar.mood-idle { background: radial-gradient(circle, #9aa5b1 0%, #4a5560 70%, transparent 100%); box-shadow: 0 0 10px rgba(150,160,175,0.5); }
+        .avatar.talking { animation: pulseBig 0.6s ease-in-out infinite; }
+        @keyframes pulseBig { 0%,100% { transform: scale(1); } 50% { transform: scale(2); } }
+        .top-title { font-size: 15px; letter-spacing: 2px; color: #00e5ff; }
+        .top-sub { font-size: 11px; color: #5f7390; letter-spacing: 1px; }
+        .top-status { margin-left: auto; font-size: 11px; color: #4ecdc4; letter-spacing: 2px; border: 1px solid rgba(78,205,196,0.3); padding: 3px 10px; border-radius: 20px; }
+        .top-status.busy { color: #ffd700; border-color: rgba(255,215,0,0.4); }
+        .top-actions { display: flex; gap: 8px; }
+        .hbtn {
+            background: transparent; border: 1px solid rgba(0,229,255,0.3);
+            color: #00e5ff; padding: 5px 12px; border-radius: 20px;
+            font-size: 11px; letter-spacing: 1px; cursor: pointer; transition: all 0.2s;
+        }
+        .hbtn:hover { background: rgba(0,229,255,0.1); }
+
+        /* Parts status bar - live status of every part of Sara */
+        .parts-bar {
+            display: flex; align-items: center; gap: 12px;
+            padding: 6px 16px; margin: 0 16px; border-radius: 10px;
+            background: rgba(10,18,34,0.6); border: 1px solid rgba(0,229,255,0.15);
+            flex-wrap: wrap;
+        }
+        .parts-title { font-size: 10px; letter-spacing: 2px; color: #5f7390; }
+        .parts-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+        .part-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 10px; letter-spacing: 1px; padding: 3px 9px;
+            border-radius: 20px; border: 1px solid rgba(255,255,255,0.12);
+            color: #8aa0b8; background: rgba(255,255,255,0.03);
+        }
+        .part-dot { width: 7px; height: 7px; border-radius: 50%; background: #555; }
+        .part-pill.on { color: #4ecdc4; border-color: rgba(78,205,196,0.4); }
+        .part-pill.on .part-dot { background: #4ecdc4; box-shadow: 0 0 6px #4ecdc4; }
+        .part-pill.off { color: #ff6b6b; border-color: rgba(255,107,107,0.4); }
+        .part-pill.off .part-dot { background: #ff6b6b; box-shadow: 0 0 6px #ff6b6b; }
+        .part-pill.booting { color: #ffd700; border-color: rgba(255,215,0,0.4); }
+        .part-pill.booting .part-dot { background: #ffd700; box-shadow: 0 0 6px #ffd700; animation: blink 1s infinite; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* Messages */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 0;
+        }
+        .message {
+            max-width: 78%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            line-height: 1.5;
+            font-size: 14px;
+            position: relative;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .message.user {
+            background: rgba(0, 229, 255, 0.08);
+            border: 1px solid rgba(0, 229, 255, 0.25);
+            color: #e0f7ff;
+            align-self: flex-end;
+            border-top-right-radius: 2px;
+        }
+        .message.sara {
+            background: rgba(20, 30, 50, 0.6);
+            border: 1px solid rgba(0, 229, 255, 0.15);
+            color: #c8d6e5;
+            align-self: flex-start;
+            border-top-left-radius: 2px;
+        }
+        .message .time { font-size: 10px; opacity: 0.5; margin-top: 6px; display: block; letter-spacing: 1px; }
+        .message .reply-timer { font-size: 10px; opacity: 0.7; color: #4ecdc4; margin-left: 8px; letter-spacing: 1px; }
+        .message .streaming-caret { color: #00e5ff; animation: blink 0.8s step-end infinite; margin-left: 2px; }
+        @keyframes blink { 50% { opacity: 0; } }
+        .empty-hint { color: #5f7390; text-align: center; margin: auto; font-size: 13px; letter-spacing: 1px; }
+
+        /* Input */
+        .input-wrapper {
+            padding: 14px 20px 18px;
+            background: rgba(5, 7, 13, 0.9);
+            border-top: 1px solid rgba(0, 229, 255, 0.12);
+        }
+        .input-area { display: flex; gap: 10px; }
+        input[type="text"] {
+            flex: 1;
+            padding: 14px 18px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(10, 15, 30, 0.8);
+            color: #e0f7ff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        input:focus { border-color: #00e5ff; box-shadow: 0 0 12px rgba(0,229,255,0.2); }
+        button.send {
+            padding: 14px 24px;
+            background: rgba(0, 229, 255, 0.15);
+            border: 1px solid #00e5ff;
+            border-radius: 8px;
+            color: #00e5ff;
+            font-weight: 500;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button.send:hover { background: rgba(0,229,255,0.3); box-shadow: 0 0 15px rgba(0,229,255,0.4); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,229,255,0.3); border-radius: 3px; }
+        @media (max-width: 720px) { .sidebar { display: none; } }
+    </style>
+</head>
+<body>
+    <!-- LEFT SIDEBAR: past conversations -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand">SARA<small>S.A.R.A</small></div>
+        </div>
+        <button class="new-chat" onclick="newChat()">+ NEW CHAT</button>
+        <div class="conv-list-label">PAST CONVERSATIONS</div>
+        <div class="conv-list" id="convList"></div>
+    </aside>
+
+    <!-- MAIN CHAT AREA -->
+    <section class="main">
+        <div class="topbar" id="topbar">
+            <div class="avatar" id="avatar"></div>
+            <div>
+                <div class="top-title">SARA 2026</div>
+                <div class="top-sub" id="topSub">Local AI Assistant</div>
+            </div>
+            <span class="top-status" id="topStatus">● ONLINE</span>
+            <div class="top-actions">
+                <button class="hbtn" onclick="window.open('/swarm-flow','_blank')">📊 SWARM FLOW</button>
+                <button class="hbtn" id="voiceToggle" onclick="toggleVoice()">🔊 VOICE ON</button>
+                <button class="hbtn" onclick="clearChat()">CLEAR</button>
+            </div>
+        </div>
+
+        <!-- PARTS STATUS BAR - shows live status of every part of Sara -->
+        <div class="parts-bar" id="partsBar">
+            <div class="parts-title">PARTS</div>
+            <div class="parts-grid" id="partsGrid"></div>
+        </div>
+
+        <div class="messages" id="messages">
+            <div class="empty-hint">Choose a past conversation, or start a new chat below.</div>
+        </div>
+
+        <div class="input-wrapper">
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="Speak to Sara..." autocomplete="off" autofocus />
+                <button class="send" onclick="sendMessage()">SEND</button>
+            </div>
+        </div>
+    </section>
+
+<script>
+const messagesDiv = document.getElementById('messages');
+const input = document.getElementById('messageInput');
+const convList = document.getElementById('convList');
+const avatarEl = document.getElementById('avatar');
+const topStatus = document.getElementById('topStatus');
+
+let isWaitingForResponse = false;
+let voiceEnabled = true;
+let activeTopicId = null;
+
+// All topic threads passed from server (newest first)
+const ALL_TOPICS = {{ topics | safe }};
+
+function renderTopicList() {
+    convList.innerHTML = '';
+    if (!ALL_TOPICS.length) {
+        convList.innerHTML = '<div class="conv-none">No chats yet. Start a new one below.</div>';
+        return;
+    }
+    ALL_TOPICS.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'conv-item';
+        div.dataset.id = t.id;
+        div.innerHTML = '<div class="conv-preview"></div><div class="conv-time"></div>';
+        div.querySelector('.conv-preview').textContent = t.title || 'New chat';
+        div.querySelector('.conv-time').textContent = (t.count || 0) + ' msgs · ' + new Date(t.time * 1000).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+        div.onclick = () => openTopic(t.id);
+        if (t.id === activeTopicId) div.classList.add('active');
+        convList.appendChild(div);
+    });
+}
+
+function setStatus(busy) {
+    if (topStatus) {
+        topStatus.classList.toggle('busy', busy);
+        topStatus.textContent = busy ? '● THINKING' : '● ONLINE';
+    }
+}
+
+// Mood ring: talking=red, thinking=blue, listening=yellow, idle=grey
+function setMood(m) {
+    if (!avatarEl) return;
+    avatarEl.classList.remove('mood-talking', 'mood-thinking', 'mood-listening', 'mood-idle');
+    if (m) avatarEl.classList.add('mood-' + m);
+}
+setMood('idle'); // start grey
+
+function addMessage(content, sender, elapsed) {
+    const hint = document.querySelector('.empty-hint');
+    if (hint) hint.remove();
+    const div = document.createElement('div');
+    div.className = 'message ' + sender;
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let html = content
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    let meta = '<span class="time">' + time + '</span>';
+    if (sender === 'sara' && elapsed) {
+        meta += ' <span class="reply-timer">⏱ ' + elapsed + 's</span>';
+    }
+    div.innerHTML = html + meta;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Streaming bubble helpers (live-updating Sara reply)
+function makeSaraBubble() {
+    const hint = document.querySelector('.empty-hint');
+    if (hint) hint.remove();
+    const div = document.createElement('div');
+    div.className = 'message sara streaming';
+    div.innerHTML = '<span class="streaming-body"></span><span class="streaming-caret">▍</span>';
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    return div;
+}
+function setSaraBubbleText(bubble, text) {
+    const body = bubble.querySelector('.streaming-body');
+    if (body) {
+        let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        body.innerHTML = html;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+}
+function finalizeSaraBubble(bubble, text, start) {
+    const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    bubble.classList.remove('streaming');
+    bubble.querySelector('.streaming-caret')?.remove();
+    let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    bubble.innerHTML = html + '<span class="time">' + time + '</span> <span class="reply-timer">⏱ ' + elapsed + 's</span>';
+    setStatus(false);
+    avatarEl.classList.add('talking');
+    setMood('talking'); // red + pulse while speaking
+    // speak it (if voice on)
+    if (voiceEnabled && text) {
+        const clean = text.replace(/[🛠️💻📄📁🧮🌐📡🔄🗣️🔊🔍ℹ️🧠💭🤖❌✅🔴🟢📶⏱️📊📈📉💾🧹]/g, '')
+            .replace(/```/g, '').replace(/\*\*/g, '').replace(/`/g, '');
+        fetch('/speak', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text: clean}) })
+            .then(() => { const dur = Math.min(8000, Math.max(1500, clean.length * 60)); setTimeout(() => { avatarEl.classList.remove('talking'); setMood('idle'); }, dur); })
+            .catch(() => setTimeout(() => { avatarEl.classList.remove('talking'); setMood('idle'); }, 2000));
+    } else {
+        setTimeout(() => { avatarEl.classList.remove('talking'); setMood('idle'); }, 2000);
+    }
+    isProcessing = false;
+    processQueue();
+}
+
+function openTopic(id) {
+    activeTopicId = id;
+    renderTopicList();
+    fetch('/topic/' + id)
+        .then(r => r.json())
+        .then(data => {
+            messagesDiv.innerHTML = '';
+            (data.messages || []).forEach(m => {
+                addMessage(m.user, 'user');
+                if (m.sara) addMessage(m.sara, 'sara');
+            });
+        })
+        .catch(() => addMessage('Could not load that topic.', 'sara'));
+}
+
+function newChat() {
+    fetch('/topic/new', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            activeTopicId = data.id;
+            ALL_TOPICS.unshift({ id: data.id, title: 'New chat', count: 0, time: Date.now() / 1000 });
+            messagesDiv.innerHTML = '';
+            renderTopicList();
+            input.focus();
+        })
+        .catch(() => { messagesDiv.innerHTML = ''; input.focus(); });
+}
+
+function clearChat() { messagesDiv.innerHTML = ''; }
+
+function toggleVoice() {
+    voiceEnabled = !voiceEnabled;
+    const b = document.getElementById('voiceToggle');
+    b.textContent = voiceEnabled ? '🔊 VOICE ON' : '🔇 VOICE OFF';
+}
+
+// Message queue - allows Boo to send multiple messages that process one at a time
+let msgQueue = [];
+let isProcessing = false;
+
+function sendMessage() {
+    const msg = input.value.trim();
+    if (!msg) return;
+    input.value = '';
+    addMessage(msg, 'user');
+    msgQueue.push(msg);
+    processQueue();
+}
+
+function processQueue() {
+    if (isProcessing || msgQueue.length === 0) return;
+    isProcessing = true;
+    const msg = msgQueue.shift();
+    const start = Date.now();
+    setStatus(true);
+    setMood('thinking'); // blue while thinking
+
+    // Stream the reply: read chunks as they arrive (Ada-style, kills the lag)
+    let fullText = '';
+    const saraBubble = makeSaraBubble();
+    // Track the current bubble - when we hit a SECTION marker, start a new bubble
+    // so Sara can reply in sections / chain and queue her replies.
+    let currentBubble = saraBubble;
+    fetch('/ask/stream', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: msg})
+    })
+    .then(res => res.body.getReader())
+    .then(reader => {
+        const dec = new TextDecoder();
+        function pump() {
+            return reader.read().then(({done, value}) => {
+                if (done) {
+                    finalizeSaraBubble(currentBubble, fullText, start);
+                    return;
+                }
+                fullText += dec.decode(value, {stream: true});
+                // If a section marker arrived, finalize this bubble and start a new one
+                if (fullText.includes('<<<SECTION>>>')) {
+                    const [first, ...rest] = fullText.split('<<<SECTION>>>');
+                    finalizeSaraBubble(currentBubble, first, start);
+                    fullText = rest.join('<<<SECTION>>>');
+                    currentBubble = makeSaraBubble();
+                    if (fullText.trim()) {
+                        setSaraBubbleText(currentBubble, fullText);
+                    }
+                } else {
+                    setSaraBubbleText(currentBubble, fullText);
+                }
+                return pump();
+            });
+        }
+        return pump();
+    })
+    .catch(() => {
+        currentBubble.remove();
+        addMessage('Error getting reply', 'sara', null);
+        setStatus(false);
+        setMood('idle');
+        isProcessing = false;
+        processQueue();
+    });
+}
+
+input.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+
+// Start on the most recent topic, or none if fresh
+activeTopicId = ALL_TOPICS.length ? ALL_TOPICS[0].id : null;
+if (activeTopicId) openTopic(activeTopicId);
+
+// ---- PARTS STATUS: poll /parts and show live status for every part ----
+const PARTS_LABELS = {
+    watchowl: '🦉 WatchOwl', learning_chain: '🧠 Learning', web: '🌐 Web UI',
+    brain: '🧠 Brain', consciousness: '🗄️ Memory', ollama: '🤖 Ollama', tools: '🔧 Tools'
+};
+const partsGrid = document.getElementById('partsGrid');
+
+function renderParts(parts) {
+    if (!parts) return;
+    const order = ['web', 'brain', 'consciousness', 'ollama', 'tools', 'watchowl', 'learning_chain'];
+    partsGrid.innerHTML = '';
+    order.forEach(name => {
+        const p = parts[name];
+        if (!p) return;
+        const connected = p.connected || p.status === 'connected' || p.status === 'ready';
+        const booting = p.status === 'starting' || p.status === 'checking';
+        const pill = document.createElement('div');
+        pill.className = 'part-pill ' + (connected ? 'on' : (booting ? 'booting' : 'off'));
+        pill.innerHTML = '<span class="part-dot"></span>' + (PARTS_LABELS[name] || name) +
+            ' <span style="opacity:0.6">' + (connected ? '●' : booting ? '…' : '○') + '</span>';
+        pill.title = (PARTS_LABELS[name] || name) + ': ' + (p.status || 'offline');
+        partsGrid.appendChild(pill);
+    });
+}
+
+async function pollParts() {
+    try {
+        const res = await fetch('/parts');
+        if (res.ok) renderParts(await res.json());
+    } catch (e) { /* Sara not reachable yet - keep polling */ }
+}
+pollParts();
+setInterval(pollParts, 5000);  // live update every 5s, runs on its own
+</script>
+</body>
+</html>

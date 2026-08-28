@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sara Swarm - Chain of Command Flow</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --card: #111827;
+    --border: #2a3550;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --accent: #00e5ff;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #facc15;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; padding: 30px; }
+  h1 { text-align: center; font-size: 26px; margin-bottom: 6px; letter-spacing: 1px; color: var(--accent); }
+  .sub { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 30px; }
+  .flow { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .node {
+    border: 2px solid var(--border); background: var(--card); padding: 14px 22px;
+    border-radius: 10px; text-align: center; min-width: 280px; font-size: 14px; line-height: 1.5;
+  }
+  .node .tag { display: block; font-size: 11px; color: var(--accent); letter-spacing: 2px; margin-bottom: 4px; text-transform: uppercase; }
+  .node .model { display: block; font-size: 11px; color: var(--muted); }
+  .terminal { border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border); font-size: 22px; background: var(--card); margin: 6px 0; }
+  .arrow { color: var(--muted); font-size: 22px; line-height: 1; margin: 2px 0; }
+  .label { color: var(--muted); font-size: 11px; }
+  .branch { display: flex; gap: 10px; justify-content: center; margin: 6px 0; width: 100%; }
+  .yes { color: var(--green); font-weight: bold; font-size: 13px; border: 1px dashed var(--green); padding: 6px 14px; border-radius: 8px; }
+  .no { color: var(--red); font-weight: bold; font-size: 13px; border: 1px dashed var(--red); padding: 6px 14px; border-radius: 8px; }
+  .loop { border: 2px dashed var(--yellow); color: var(--yellow); padding: 10px 18px; border-radius: 10px; font-size: 13px; text-align: center; min-width: 260px; }
+  .blue { border-color: var(--blue); } .green { border-color: var(--green); } .purple { border-color: var(--purple); } .yellow { border-color: var(--yellow); }
+  .note { max-width: 700px; margin: 24px auto; color: var(--muted); font-size: 12px; line-height: 1.6; border-top: 1px solid var(--border); padding-top: 16px; }
+  .note b { color: var(--accent); }
+</style>
+</head>
+<body>
+  <h1>SARA SWARM — CHAIN OF COMMAND</h1>
+  <div class="sub">How each request flows through Sara's model team (flow chart)</div>
+
+  <div class="flow">
+    <div class="terminal">⬇</div>
+    <div class="label">USER REQUEST</div>
+
+    <div class="arrow">▼</div>
+    <div class="node blue"><span class="tag">STEP 1 — TASK CREATOR / ROUTER</span>
+      Which worker handles this task?<br><span class="model">(small checker model picks the role)</span></div>
+
+    <div class="arrow">▼</div>
+    <div class="branch">
+      <div class="no">CODER</div>
+      <div class="no">WEB_SEARCH</div>
+      <div class="no">PRIMARY</div>
+    </div>
+
+    <div class="arrow">▼</div>
+    <div class="node green"><span class="tag">STEP 2 — WORKER</span>
+      Produces the response<br><span class="model">(coder / web_search / primary)</span></div>
+
+    <div class="arrow">▼</div>
+    <div class="node purple"><span class="tag">STEP 3 — CHECKER</span>
+      ONLY asks: "Was the task completed?"<br><span class="model">(YES or NO — nothing else)</span></div>
+
+    <div class="arrow">▼</div>
+    <div class="branch">
+      <div class="yes">YES → DONE (return answer)</div>
+    </div>
+    <div class="arrow">▲</div>
+    <div class="branch">
+      <div class="no">NO → CONTINUE LOOP</div>
+    </div>
+
+    <div class="arrow">▼</div>
+    <div class="loop"><span class="tag">STEP 4 — REPROCESS IN A DIFFERENT LIGHT</span>
+      Different model + different approach<br><span class="model">(up to 3 rounds, then give best effort)</span></div>
+
+    <div class="arrow">▲</div>
+    <div class="label">loop back to STEP 2 (new attempt)</div>
+
+    <div class="arrow">▼</div>
+    <div class="node yellow"><span class="tag">STEP 5 — SKILL DETECTOR</span>
+      Save reusable procedure?<br><span class="model">(saves as SKILL.md if reusable)</span></div>
+
+    <div class="arrow">▼</div>
+    <div class="node"><span class="tag">STEP 6 — SELF-IMPROVE</span>
+      If stuck, create a new tool<br><span class="model">(grow her own tools)</span></div>
+  </div>
+
+  <div class="note">
+    <b>Why the checker only says YES/NO:</b> its answer is the trigger for the continue loop —
+    <span class="yes">YES</span> = task done, loop STOPS. <span class="no">NO</span> = reprocess in a different light, loop STARTS.
+    Nothing else is needed for that decision.
+    <br><br>
+    <b>Models can have MORE THAN ONE job.</b> e.g. the checker also acts as the task router and skill detector.
+  </div>
+</body>
+</html>

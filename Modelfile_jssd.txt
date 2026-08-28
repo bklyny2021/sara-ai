@@ -1,0 +1,1 @@
+FROM J:/ollama-models/qwen3-14b-Q6.gguf

@@ -1,0 +1,50 @@
+# Sara - private/local files (NEVER push these)
+.env
+*.log
+__pycache__/
+*.pyc
+
+# Private memory & data
+MEMORY.md
+USER.md
+SOUL.md
+AGENTS.md
+HEARTBEAT.md
+memory/
+wiki/
+simple_memory/
+conscious-memory/
+conscious-backups/
+learning_logs/
+learning_state.json
+learning_chain_state.json
+learning_chain.lock
+conversations.json
+topics.json
+
+# Caches & temp
+cache/
+audio_cache/
+image_cache/
+logs/
+checkpoints/
+pets/
+hooks/
+plans/
+look_files/
+models/
+build/
+dist/
+imported/
+
+# Backups (timestamped, keep local only)
+Backups/
+*.v_*
+
+# Local-only scripts
+_phone.py
+_probe2.py
+test_*.py
+trace_*.py
+debug_*.py
+restart_*.sh

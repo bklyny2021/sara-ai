@@ -1,0 +1,1 @@
+FROM C:/Users/bklyn/AppData/Local/Temp/qwen3-14b-huihui-Q6.gguf

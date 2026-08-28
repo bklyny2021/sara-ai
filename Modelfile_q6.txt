@@ -1,0 +1,8 @@
+FROM C:/Users/bklyn/AppData/Local/Temp/qwen3-14b-Q6.gguf
+
+# Qwen3-14B-abliterated (mlabonne) at Q6_K quantization
+# Replaces Sara's old Q5 brain. Same abliterated model, higher precision.
+TEMPLATE "{{- if .System }}<|start_header_id|>system<|end_header_id|>\n\n{{ .System }}<|eot_id|>{{ end }}{{ if .Prompt }}<|start_header_id|>user<|end_header_id|>\n\n{{ .Prompt }}<|eot_id|>{{ end }}<|start_header_id|>assistant<|end_header_id|>\n\n{{ .Response }}<|eot_id|>"
+PARAMETER stop "<|start_header_id|>"
+PARAMETER stop "<|end_header_id|>"
+PARAMETER stop "<|eot_id|>"
